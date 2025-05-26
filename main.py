@@ -10,6 +10,7 @@ import random
 from fastapi.responses import Response, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+import pytz  # Importar pytz para manejar zonas horarias
 
 # Configurar locale para español
 try:
@@ -23,6 +24,9 @@ except locale.Error:
         except locale.Error:
             # Si falla, usar el locale por defecto
             pass
+
+# Definir la zona horaria de Colombia
+colombia_tz = pytz.timezone('America/Bogota')
 
 app = FastAPI()
 
@@ -60,13 +64,17 @@ class ImageRequest(BaseModel):
 @app.get("/", response_class=HTMLResponse)
 @app.head("/")
 async def read_root():
-    html_content = """
+    # Obtener la hora actual en Colombia para mostrarla en la página
+    now = datetime.datetime.now(colombia_tz)
+    current_time = now.strftime("%d/%m/%Y %H:%M:%S")
+    
+    html_content = f"""
     <!DOCTYPE html>
     <html>
     <head>
         <title>API Nequi Generator</title>
         <style>
-            body {
+            body {{
                 font-family: Arial, sans-serif;
                 margin: 0;
                 padding: 0;
@@ -77,31 +85,36 @@ async def read_root():
                 background-color: #DA0081;
                 color: white;
                 text-align: center;
-            }
-            .container {
+            }}
+            .container {{
                 max-width: 800px;
                 padding: 20px;
                 background-color: rgba(0, 0, 0, 0.1);
                 border-radius: 10px;
                 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            }
-            h1 {
+            }}
+            h1 {{
                 font-size: 2.5em;
                 margin-bottom: 20px;
-            }
-            p {
+            }}
+            p {{
                 font-size: 1.2em;
                 line-height: 1.6;
                 margin-bottom: 15px;
-            }
-            .status {
+            }}
+            .status {{
                 display: inline-block;
                 padding: 8px 16px;
                 background-color: #4CAF50;
                 border-radius: 4px;
                 font-weight: bold;
                 margin-top: 20px;
-            }
+            }}
+            .time {{
+                margin-top: 15px;
+                font-size: 0.9em;
+                opacity: 0.8;
+            }}
         </style>
     </head>
     <body>
@@ -110,6 +123,7 @@ async def read_root():
             <p>Esta API permite generar imágenes de comprobantes de pago y detalles de movimientos en formato Nequi.</p>
             <p>Para usar la API, envía solicitudes POST al endpoint /generate_image/ con los parámetros requeridos.</p>
             <div class="status">Estado: Activo</div>
+            <div class="time">Hora Colombia: {current_time}</div>
         </div>
     </body>
     </html>
@@ -155,8 +169,8 @@ async def generate_image(request: ImageRequest):
     except IOError:
         raise HTTPException(status_code=500, detail="Error loading font file.")
 
-    # Generar la fecha actual en el formato deseado
-    now = datetime.datetime.now()
+    # Generar la fecha actual en el formato deseado usando la zona horaria de Colombia
+    now = datetime.datetime.now(colombia_tz)
     # Formato: "dd de (mes) de (yyyy) a las hh:mm a. m. (o p. m.)"
     # Intentamos usar locale para obtener el mes en español
     try:
