@@ -106,10 +106,14 @@
                 <label for="phone">Número Nequi:</label>
                 <input type="text" id="phone" name="phone" required>
             </div>
+            <div class="form-group">
+                <label for="mvalue">Valor M (opcional):</label>
+                <input type="text" id="mvalue" name="mvalue" placeholder="Solo números, se añadirá M automáticamente">
+            </div>
             <button type="submit">Generar Imagen</button>
         </form>
         <div class="note">
-            <p><strong>Nota:</strong> La fecha actual, la referencia (M-value) y el estado "Disponible" se generarán automáticamente.</p>
+            <p><strong>Nota:</strong> La fecha actual y el estado "Disponible" se generarán automáticamente. Si no proporciona un valor M, se generará uno aleatorio.</p>
         </div>
         <div id="imageResult"></div>
     </div>
@@ -131,8 +135,8 @@
                 datos: {
                     recipient: jsonData.recipient,
                     amount: jsonData.amount,
-                    phone: jsonData.phone
-                    // mvalue y disponible se generan automáticamente en el servidor
+                    phone: jsonData.phone,
+                    mvalue: jsonData.mvalue || ""
                 }
             };
 

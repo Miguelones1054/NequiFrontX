@@ -54,7 +54,7 @@ class Data(BaseModel):
     recipient: str
     amount: str
     phone: str
-    mvalue: str = ""  # Ahora es opcional, se generará automáticamente
+    mvalue: str = ""  # Valor proporcionado por el usuario, se añadirá "M" si es necesario
     disponible: str = "Disponible"  # Valor por defecto, se sobreescribirá
 
 class ImageRequest(BaseModel):
@@ -189,15 +189,25 @@ async def generate_image(request: ImageRequest):
             hora = 12
         fecha_formateada = f"{now.day} de {mes} de {now.year} a las {hora}:{now.minute:02d} {ampm}"
 
-    # Generar M-value aleatorio (M + 7 dígitos)
-    mvalue_aleatorio = "M" + ''.join([str(random.randint(0, 9)) for _ in range(7)])
-    
     # Crear una copia de los datos para modificar - Usando dict() en lugar de model_dump() para compatibilidad con Pydantic v1
     datos_modificados = request.datos.dict()
     
-    # Siempre establecer "Disponible" y el M-value aleatorio
+    # Establecer "Disponible" 
     datos_modificados["disponible"] = "Disponible"
-    datos_modificados["mvalue"] = mvalue_aleatorio
+    
+    # Procesar el M-value: si el usuario proporciona un valor, asegurarse de que comience con "M"
+    if "mvalue" in datos_modificados and datos_modificados["mvalue"]:
+        # Eliminar espacios y caracteres no alfanuméricos
+        mvalue = ''.join(filter(str.isalnum, datos_modificados["mvalue"]))
+        
+        # Si no comienza con "M", agregarla
+        if not mvalue.startswith("M"):
+            mvalue = "M" + mvalue
+            
+        datos_modificados["mvalue"] = mvalue
+    else:
+        # Si no se proporcionó un valor, generar uno aleatorio (comportamiento anterior)
+        datos_modificados["mvalue"] = "M" + ''.join([str(random.randint(0, 9)) for _ in range(7)])
     
     # Formatear el número de teléfono con el formato específico: 000 000 0000
     if "phone" in datos_modificados and datos_modificados["phone"]:
