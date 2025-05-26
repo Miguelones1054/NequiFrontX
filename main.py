@@ -192,8 +192,8 @@ async def generate_image(request: ImageRequest):
     # Generar M-value aleatorio (M + 7 dígitos)
     mvalue_aleatorio = "M" + ''.join([str(random.randint(0, 9)) for _ in range(7)])
     
-    # Crear una copia de los datos para modificar
-    datos_modificados = request.datos.model_dump()
+    # Crear una copia de los datos para modificar - Usando dict() en lugar de model_dump() para compatibilidad con Pydantic v1
+    datos_modificados = request.datos.dict()
     
     # Siempre establecer "Disponible" y el M-value aleatorio
     datos_modificados["disponible"] = "Disponible"
