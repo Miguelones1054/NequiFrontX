@@ -7,7 +7,7 @@ import os
 import datetime
 import locale
 import random
-from fastapi.responses import Response
+from fastapi.responses import Response, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -57,21 +57,69 @@ class ImageRequest(BaseModel):
     tipo: str
     datos: Data
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
+@app.head("/")
 async def read_root():
-    return {"message": "API de generación de imágenes Nequi funcionando correctamente"}
-
-# Endpoint especial para UptimeRobot que acepta método HEAD
-@app.head("/ping")
-async def ping_head():
-    # Esta función responde a solicitudes HEAD, no necesita devolver contenido
-    # UptimeRobot usará este endpoint para mantener la API activa
-    return Response(status_code=200)
-
-# También permitimos GET por si quieres probar manualmente
-@app.get("/ping")
-async def ping_get():
-    return {"status": "ok", "message": "API activa"}
+    html_content = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>API Nequi Generator</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                background-color: #DA0081;
+                color: white;
+                text-align: center;
+            }
+            .container {
+                max-width: 800px;
+                padding: 20px;
+                background-color: rgba(0, 0, 0, 0.1);
+                border-radius: 10px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            }
+            h1 {
+                font-size: 2.5em;
+                margin-bottom: 20px;
+            }
+            p {
+                font-size: 1.2em;
+                line-height: 1.6;
+                margin-bottom: 15px;
+            }
+            .status {
+                display: inline-block;
+                padding: 8px 16px;
+                background-color: #4CAF50;
+                border-radius: 4px;
+                font-weight: bold;
+                margin-top: 20px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>API de Generación de Imágenes Nequi</h1>
+            <p>Esta API permite generar imágenes de comprobantes de pago y detalles de movimientos en formato Nequi.</p>
+            <p>Para usar la API, envía solicitudes POST al endpoint /generate_image/ con los parámetros requeridos.</p>
+            <div class="status">Estado: Activo</div>
+        </div>
+    </body>
+    </html>
+    """
+    # Para solicitudes HEAD, simplemente devuelve un código 200 sin contenido
+    if app.router.get_current_route_name() == "read_root_head":
+        return Response(status_code=200)
+    
+    # Para solicitudes GET, devuelve la página HTML
+    return HTMLResponse(content=html_content)
 
 @app.post("/generate_image/")
 async def generate_image(request: ImageRequest):
