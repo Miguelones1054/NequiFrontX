@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from PIL import Image, ImageDraw, ImageFont
@@ -62,8 +62,7 @@ class ImageRequest(BaseModel):
     datos: Data
 
 @app.get("/", response_class=HTMLResponse)
-@app.head("/")
-async def read_root():
+async def read_root(request: Request):
     # Obtener la hora actual en Colombia para mostrarla en la página
     now = datetime.datetime.now(colombia_tz)
     current_time = now.strftime("%d/%m/%Y %H:%M:%S")
@@ -128,12 +127,14 @@ async def read_root():
     </body>
     </html>
     """
-    # Para solicitudes HEAD, simplemente devuelve un código 200 sin contenido
-    if app.router.get_current_route_name() == "read_root_head":
-        return Response(status_code=200)
     
     # Para solicitudes GET, devuelve la página HTML
     return HTMLResponse(content=html_content)
+
+@app.head("/")
+async def read_root_head():
+    # Para solicitudes HEAD, simplemente devuelve un código 200 sin contenido
+    return Response(status_code=200)
 
 @app.post("/generate_image/")
 async def generate_image(request: ImageRequest):
