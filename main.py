@@ -175,14 +175,14 @@ async def generate_image(request: ImageRequest):
     datos_modificados = request.datos.dict()
     
     # Verificar si se proporcionó una fecha específica
+    fecha_formateada = ""
     if datos_modificados.get("fecha") and datos_modificados["fecha"].strip():
-        # Usar la fecha proporcionada
+        # Usar la fecha proporcionada si existe y no está vacía
         fecha_formateada = datos_modificados["fecha"]
     else:
         # Generar la fecha actual en el formato deseado usando la zona horaria de Colombia
         now = datetime.datetime.now(colombia_tz)
         # Formato: "dd de (mes) de (yyyy) a las hh:mm a. m. (o p. m.)"
-        # Intentamos usar locale para obtener el mes en español
         try:
             fecha_formateada = now.strftime("%-d de %B de %Y a las %I:%M %p")
             # Reemplazar "AM" y "PM" por "a. m." y "p. m."
@@ -198,9 +198,8 @@ async def generate_image(request: ImageRequest):
                 hora = 12
             fecha_formateada = f"{now.day} de {mes} de {now.year} a las {hora}:{now.minute:02d} {ampm}"
         
-        # Si es un voucher, guardamos la fecha generada para posible uso futuro
-        if request.tipo == "voucher":
-            datos_modificados["fecha"] = fecha_formateada
+    # Almacenar la fecha formateada para usar en la respuesta y/o en futuros requests
+    datos_modificados["fecha"] = fecha_formateada
 
     # Generar M-value aleatorio (M + 7 dígitos)
     mvalue_aleatorio = "M" + ''.join([str(random.randint(0, 9)) for _ in range(7)])
@@ -270,7 +269,7 @@ async def generate_image(request: ImageRequest):
             y = coords[key]["y"]
             draw.text((x, y), str(value), fill=(32, 0, 32), font=font)  # Color #200020 (equivalente a RGB(32, 0, 32))
     
-    # Ahora escribimos la fecha generada automáticamente
+    # Ahora escribimos la fecha en la posición correcta para la fecha
     if "date" in coords:
         x = coords["date"]["x"]
         y = coords["date"]["y"]
@@ -282,10 +281,6 @@ async def generate_image(request: ImageRequest):
     img.save(buf, format='JPEG') # Or PNG, depending on desired output
     byte_im = buf.getvalue()
 
-    # Si es voucher, devolver también la fecha en la respuesta para poder usarla en detail
-    if request.tipo == "voucher":
-        # Preparar cabecera con la fecha
-        headers = {"X-Nequi-Fecha": fecha_formateada}
-        return Response(content=byte_im, media_type="image/jpeg", headers=headers)
-    else:
-        return Response(content=byte_im, media_type="image/jpeg") 
+    # Siempre devolver la fecha en la cabecera para cualquier tipo (voucher o detail)
+    headers = {"X-Nequi-Fecha": fecha_formateada}
+    return Response(content=byte_im, media_type="image/jpeg", headers=headers) 
