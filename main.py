@@ -56,6 +56,7 @@ class Data(BaseModel):
     phone: str
     mvalue: str = ""  # Ahora es opcional, se generará automáticamente
     disponible: str = "Disponible"  # Valor por defecto, se sobreescribirá
+    fecha: str = ""  # Campo opcional para mantener la misma fecha entre voucher y detail
 
 class ImageRequest(BaseModel):
     tipo: str
@@ -170,30 +171,39 @@ async def generate_image(request: ImageRequest):
     except IOError:
         raise HTTPException(status_code=500, detail="Error loading font file.")
 
-    # Generar la fecha actual en el formato deseado usando la zona horaria de Colombia
-    now = datetime.datetime.now(colombia_tz)
-    # Formato: "dd de (mes) de (yyyy) a las hh:mm a. m. (o p. m.)"
-    # Intentamos usar locale para obtener el mes en español
-    try:
-        fecha_formateada = now.strftime("%-d de %B de %Y a las %I:%M %p")
-        # Reemplazar "AM" y "PM" por "a. m." y "p. m."
-        fecha_formateada = fecha_formateada.replace("AM", "a. m.").replace("PM", "p. m.")
-    except:
-        # Si falla, hacemos una implementación manual para los meses
-        meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", 
-                 "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
-        mes = meses[now.month - 1]
-        ampm = "a. m." if now.hour < 12 else "p. m."
-        hora = now.hour % 12
-        if hora == 0:
-            hora = 12
-        fecha_formateada = f"{now.day} de {mes} de {now.year} a las {hora}:{now.minute:02d} {ampm}"
+    # Crear una copia de los datos para modificar - Usando dict() en lugar de model_dump() para compatibilidad con Pydantic v1
+    datos_modificados = request.datos.dict()
+    
+    # Verificar si se proporcionó una fecha específica
+    if datos_modificados.get("fecha") and datos_modificados["fecha"].strip():
+        # Usar la fecha proporcionada
+        fecha_formateada = datos_modificados["fecha"]
+    else:
+        # Generar la fecha actual en el formato deseado usando la zona horaria de Colombia
+        now = datetime.datetime.now(colombia_tz)
+        # Formato: "dd de (mes) de (yyyy) a las hh:mm a. m. (o p. m.)"
+        # Intentamos usar locale para obtener el mes en español
+        try:
+            fecha_formateada = now.strftime("%-d de %B de %Y a las %I:%M %p")
+            # Reemplazar "AM" y "PM" por "a. m." y "p. m."
+            fecha_formateada = fecha_formateada.replace("AM", "a. m.").replace("PM", "p. m.")
+        except:
+            # Si falla, hacemos una implementación manual para los meses
+            meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", 
+                    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+            mes = meses[now.month - 1]
+            ampm = "a. m." if now.hour < 12 else "p. m."
+            hora = now.hour % 12
+            if hora == 0:
+                hora = 12
+            fecha_formateada = f"{now.day} de {mes} de {now.year} a las {hora}:{now.minute:02d} {ampm}"
+        
+        # Si es un voucher, guardamos la fecha generada para posible uso futuro
+        if request.tipo == "voucher":
+            datos_modificados["fecha"] = fecha_formateada
 
     # Generar M-value aleatorio (M + 7 dígitos)
     mvalue_aleatorio = "M" + ''.join([str(random.randint(0, 9)) for _ in range(7)])
-    
-    # Crear una copia de los datos para modificar - Usando dict() en lugar de model_dump() para compatibilidad con Pydantic v1
-    datos_modificados = request.datos.dict()
     
     # Siempre establecer "Disponible" y el M-value aleatorio
     datos_modificados["disponible"] = "Disponible"
@@ -255,7 +265,7 @@ async def generate_image(request: ImageRequest):
     
     # Write text on the image - usando los datos modificados
     for key, value in datos_modificados.items():
-        if key in coords:
+        if key in coords and key != "fecha":  # No escribir el campo fecha como un campo normal
             x = coords[key]["x"]
             y = coords[key]["y"]
             draw.text((x, y), str(value), fill=(32, 0, 32), font=font)  # Color #200020 (equivalente a RGB(32, 0, 32))
@@ -272,4 +282,10 @@ async def generate_image(request: ImageRequest):
     img.save(buf, format='JPEG') # Or PNG, depending on desired output
     byte_im = buf.getvalue()
 
-    return Response(content=byte_im, media_type="image/jpeg") # Or image/png 
+    # Si es voucher, devolver también la fecha en la respuesta para poder usarla en detail
+    if request.tipo == "voucher":
+        # Preparar cabecera con la fecha
+        headers = {"X-Nequi-Fecha": fecha_formateada}
+        return Response(content=byte_im, media_type="image/jpeg", headers=headers)
+    else:
+        return Response(content=byte_im, media_type="image/jpeg") 
