@@ -61,6 +61,18 @@ class ImageRequest(BaseModel):
 async def read_root():
     return {"message": "API de generación de imágenes Nequi funcionando correctamente"}
 
+# Endpoint especial para UptimeRobot que acepta método HEAD
+@app.head("/ping")
+async def ping_head():
+    # Esta función responde a solicitudes HEAD, no necesita devolver contenido
+    # UptimeRobot usará este endpoint para mantener la API activa
+    return Response(status_code=200)
+
+# También permitimos GET por si quieres probar manualmente
+@app.get("/ping")
+async def ping_get():
+    return {"status": "ok", "message": "API activa"}
+
 @app.post("/generate_image/")
 async def generate_image(request: ImageRequest):
     # Base paths con rutas relativas desde el directorio base
