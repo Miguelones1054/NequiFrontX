@@ -76,22 +76,22 @@ app.add_middleware(
     allow_headers=["*"],  # Permite todas las cabeceras
 )
 
-# Diccionario para almacenar las peticiones por IP
-request_counts = defaultdict(lambda: {"count": 0, "reset_time": datetime.now() + timedelta(minutes=1)})
+# Diccionario para almacenar las peticiones por token
+token_request_counts = defaultdict(lambda: {"count": 0, "reset_time": datetime.now() + timedelta(minutes=1)})
 
-# Función para verificar el rate limit
-def check_rate_limit(ip: str) -> bool:
+# Función para verificar el rate limit por token
+def check_token_rate_limit(token: str) -> bool:
     current_time = datetime.now()
     
     # Si el tiempo de reset ha pasado, reiniciar el contador
-    if current_time > request_counts[ip]["reset_time"]:
-        request_counts[ip] = {"count": 0, "reset_time": current_time + timedelta(minutes=1)}
+    if current_time > token_request_counts[token]["reset_time"]:
+        token_request_counts[token] = {"count": 0, "reset_time": current_time + timedelta(minutes=1)}
     
     # Incrementar el contador
-    request_counts[ip]["count"] += 1
+    token_request_counts[token]["count"] += 1
     
-    # Verificar si se excedió el límite (ahora 10 peticiones por minuto)
-    return request_counts[ip]["count"] <= 10
+    # Verificar si se excedió el límite (5 peticiones por minuto)
+    return token_request_counts[token]["count"] <= 5
 
 # Función para verificar el token de Firebase
 async def verify_firebase_token(request: Request) -> str:
@@ -215,14 +215,11 @@ async def read_root_head():
 
 @app.post("/generate_image/")
 async def generate_image(request: ImageRequest, request_obj: Request):
-    # Verificar autenticación
-    user_id = await verify_firebase_token(request_obj)
+    # Verificar autenticación y obtener token
+    token = await verify_firebase_token(request_obj)
     
-    # Obtener la IP del cliente
-    client_ip = request_obj.client.host if request_obj.client else "unknown"
-    
-    # Verificar rate limit
-    if not check_rate_limit(client_ip):
+    # Verificar rate limit por token
+    if not check_token_rate_limit(token):
         raise HTTPException(
             status_code=500,
             detail="Error interno del servidor: No se pudo procesar la solicitud en este momento. Por favor, intente más tarde."
