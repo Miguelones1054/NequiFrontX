@@ -11,6 +11,7 @@ from fastapi.responses import Response, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import pytz  # Importar pytz para manejar zonas horarias
+import unicodedata  # Para normalizar caracteres
 
 # Configurar locale para español
 try:
@@ -60,6 +61,17 @@ class Data(BaseModel):
 class ImageRequest(BaseModel):
     tipo: str
     datos: Data
+
+def normalizar_texto(texto):
+    # Convertir a string si no lo es
+    texto = str(texto)
+    # Normalizar caracteres Unicode (NFKD) y eliminar diacríticos
+    texto = unicodedata.normalize('NFKD', texto)
+    # Reemplazar ñ por n
+    texto = texto.replace('ñ', 'n').replace('Ñ', 'N')
+    # Eliminar caracteres no ASCII
+    texto = ''.join(c for c in texto if not unicodedata.combining(c))
+    return texto
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
@@ -194,6 +206,7 @@ async def generate_image(request: ImageRequest):
     
     # Crear la fecha formateada con hora en formato de dos dígitos
     fecha_formateada = f"{now.day} de {meses[now.month]} de {now.year} a las {hora:02d}:{now.minute:02d} {ampm}"
+    fecha_formateada = normalizar_texto(fecha_formateada)
 
     # Crear una copia de los datos para modificar
     datos_modificados = request.datos.dict()
@@ -268,6 +281,11 @@ async def generate_image(request: ImageRequest):
         except:
             # Si hay algún error, dejar el valor original
             pass
+    
+    # Normalizar todos los textos antes de escribirlos en la imagen
+    for key, value in datos_modificados.items():
+        if isinstance(value, str):
+            datos_modificados[key] = normalizar_texto(value)
     
     # Write text on the image - usando los datos modificados
     for key, value in datos_modificados.items():
