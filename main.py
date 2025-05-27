@@ -53,7 +53,7 @@ app.add_middleware(
 class Data(BaseModel):
     recipient: str
     amount: str
-    phone: str
+    phone: str = ""  # Ahora es opcional para los tipos QR
     mvalue: str = ""  # Valor proporcionado por el usuario, se añadirá "M" si es necesario
     disponible: str = "Disponible"  # Valor por defecto, se sobreescribirá
 
@@ -149,8 +149,14 @@ async def generate_image(request: ImageRequest):
     elif request.tipo == "detail":
         image_path = os.path.join(image_base_path, "movement_detail.jpg")
         coords_path = os.path.join(COORDS_DIR, "posiciones_textos_detalles.json")
+    elif request.tipo == "qr_vouch":
+        image_path = os.path.join(image_base_path, "qr", "qr_voucher.jpg")
+        coords_path = os.path.join(COORDS_DIR, "pociciones_textos_qr_vouch.json")
+    elif request.tipo == "qr_detail":
+        image_path = os.path.join(image_base_path, "qr", "qr_detail.jpg")
+        coords_path = os.path.join(COORDS_DIR, "pociciones_textos_qr_detail.json")
     else:
-        raise HTTPException(status_code=400, detail="Invalid 'tipo' specified. Use 'voucher' or 'detail'.")
+        raise HTTPException(status_code=400, detail="Invalid 'tipo' specified. Use 'voucher', 'detail', 'qr_vouch', or 'qr_detail'.")
 
     # Load image and coordinates
     try:

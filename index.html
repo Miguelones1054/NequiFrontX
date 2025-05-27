@@ -92,6 +92,8 @@
                 <select id="tipo" name="tipo" required>
                     <option value="voucher">Voucher</option>
                     <option value="detail">Detalle</option>
+                    <option value="qr_vouch">QR Voucher</option>
+                    <option value="qr_detail">QR Detalle</option>
                 </select>
             </div>
             <div class="form-group">
@@ -102,7 +104,7 @@
                 <label for="amount">Cuánto:</label>
                 <input type="text" id="amount" name="amount" required>
             </div>
-            <div class="form-group">
+            <div class="form-group phone-field">
                 <label for="phone">Número Nequi:</label>
                 <input type="text" id="phone" name="phone" required>
             </div>
@@ -119,6 +121,28 @@
     </div>
 
     <script>
+        // Función para mostrar u ocultar el campo de teléfono según el tipo seleccionado
+        function togglePhoneField() {
+            const tipoSeleccionado = document.getElementById('tipo').value;
+            const phoneField = document.querySelector('.phone-field');
+            const phoneInput = document.getElementById('phone');
+            
+            if (tipoSeleccionado === 'qr_vouch' || tipoSeleccionado === 'qr_detail') {
+                phoneField.style.display = 'none';
+                phoneInput.required = false;
+                phoneInput.value = '';
+            } else {
+                phoneField.style.display = 'block';
+                phoneInput.required = true;
+            }
+        }
+        
+        // Añadir evento de cambio al selector de tipo
+        document.getElementById('tipo').addEventListener('change', togglePhoneField);
+        
+        // Ejecutar una vez al cargar la página
+        document.addEventListener('DOMContentLoaded', togglePhoneField);
+        
         document.getElementById('imageForm').addEventListener('submit', async function(event) {
             event.preventDefault();
 
@@ -135,7 +159,7 @@
                 datos: {
                     recipient: jsonData.recipient,
                     amount: jsonData.amount,
-                    phone: jsonData.phone,
+                    phone: jsonData.phone || "",
                     mvalue: jsonData.mvalue || ""
                 }
             };
