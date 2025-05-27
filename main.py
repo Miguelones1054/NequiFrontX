@@ -263,7 +263,7 @@ async def generate_image(request: ImageRequest):
                     formatted_int = "." + formatted_int
             
             # Combinar con los decimales
-            formatted_amount = f"${formatted_int},{decimal_part:02d}"
+            formatted_amount = f"$ {formatted_int},{decimal_part:02d}"
             datos_modificados["amount"] = formatted_amount
         except:
             # Si hay algún error, dejar el valor original
