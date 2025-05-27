@@ -178,24 +178,24 @@ async def generate_image(request: ImageRequest):
 
     # Generar la fecha actual en el formato deseado usando la zona horaria de Colombia
     now = datetime.datetime.now(colombia_tz)
-    # Formato: "dd de (mes) de (yyyy) a las hh:mm a. m. (o p. m.)"
-    # Intentamos usar locale para obtener el mes en español
-    try:
-        fecha_formateada = now.strftime("%-d de %B de %Y a las %I:%M %p")
-        # Reemplazar "AM" y "PM" por "a. m." y "p. m."
-        fecha_formateada = fecha_formateada.replace("AM", "a. m.").replace("PM", "p. m.")
-    except:
-        # Si falla, hacemos una implementación manual para los meses
-        meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", 
-                 "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
-        mes = meses[now.month - 1]
-        ampm = "a. m." if now.hour < 12 else "p. m."
-        hora = now.hour % 12
-        if hora == 0:
-            hora = 12
-        fecha_formateada = f"{now.day} de {mes} de {now.year} a las {hora}:{now.minute:02d} {ampm}"
+    
+    # Diccionario de meses en español
+    meses = {
+        1: "enero", 2: "febrero", 3: "marzo", 4: "abril",
+        5: "mayo", 6: "junio", 7: "julio", 8: "agosto",
+        9: "septiembre", 10: "octubre", 11: "noviembre", 12: "diciembre"
+    }
+    
+    # Formatear la hora
+    hora = now.hour % 12
+    if hora == 0:
+        hora = 12
+    ampm = "a. m." if now.hour < 12 else "p. m."
+    
+    # Crear la fecha formateada
+    fecha_formateada = f"{now.day} de {meses[now.month]} de {now.year} a las {hora}:{now.minute:02d} {ampm}"
 
-    # Crear una copia de los datos para modificar - Usando dict() en lugar de model_dump() para compatibilidad con Pydantic v1
+    # Crear una copia de los datos para modificar
     datos_modificados = request.datos.dict()
     
     # Establecer "Disponible" 
