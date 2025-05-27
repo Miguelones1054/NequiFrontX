@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from PIL import Image, ImageDraw, ImageFont
 import json
 import os
-import datetime
+from datetime import datetime, timedelta
 import locale
 import random
 from fastapi.responses import Response, HTMLResponse
@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import pytz  # Importar pytz para manejar zonas horarias
 import unicodedata  # Para normalizar caracteres
+from collections import defaultdict
 
 # Configurar locale para español
 try:
@@ -51,6 +52,23 @@ app.add_middleware(
     allow_headers=["*"],  # Permite todas las cabeceras
 )
 
+# Diccionario para almacenar las peticiones por IP
+request_counts = defaultdict(lambda: {"count": 0, "reset_time": datetime.now() + timedelta(minutes=1)})
+
+# Función para verificar el rate limit
+def check_rate_limit(ip: str) -> bool:
+    current_time = datetime.now()
+    
+    # Si el tiempo de reset ha pasado, reiniciar el contador
+    if current_time > request_counts[ip]["reset_time"]:
+        request_counts[ip] = {"count": 0, "reset_time": current_time + timedelta(minutes=1)}
+    
+    # Incrementar el contador
+    request_counts[ip]["count"] += 1
+    
+    # Verificar si se excedió el límite (ahora 10 peticiones por minuto)
+    return request_counts[ip]["count"] <= 10
+
 class Data(BaseModel):
     recipient: str
     amount: str
@@ -76,7 +94,7 @@ def normalizar_texto(texto):
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
     # Obtener la hora actual en Colombia para mostrarla en la página
-    now = datetime.datetime.now(colombia_tz)
+    now = datetime.now(colombia_tz)
     current_time = now.strftime("%d/%m/%Y %H:%M:%S")
     
     html_content = f"""
@@ -149,7 +167,17 @@ async def read_root_head():
     return Response(status_code=200)
 
 @app.post("/generate_image/")
-async def generate_image(request: ImageRequest):
+async def generate_image(request: ImageRequest, request_obj: Request):
+    # Obtener la IP del cliente
+    client_ip = request_obj.client.host if request_obj.client else "unknown"
+    
+    # Verificar rate limit
+    if not check_rate_limit(client_ip):
+        raise HTTPException(
+            status_code=500,
+            detail="Error interno del servidor: No se pudo procesar la solicitud en este momento. Por favor, intente más tarde."
+        )
+    
     # Base paths con rutas relativas desde el directorio base
     image_base_path = os.path.join(ASSETS_DIR, "images")
     font_path = os.path.join(ASSETS_DIR, "font", "manrope_medium.ttf")
@@ -189,7 +217,7 @@ async def generate_image(request: ImageRequest):
         raise HTTPException(status_code=500, detail="Error loading font file.")
 
     # Generar la fecha actual en el formato deseado usando la zona horaria de Colombia
-    now = datetime.datetime.now(colombia_tz)
+    now = datetime.now(colombia_tz)
     
     # Diccionario de meses en español
     meses = {
