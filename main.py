@@ -192,8 +192,8 @@ async def generate_image(request: ImageRequest):
         hora = 12
     ampm = "a. m." if now.hour < 12 else "p. m."
     
-    # Crear la fecha formateada
-    fecha_formateada = f"{now.day} de {meses[now.month]} de {now.year} a las {hora}:{now.minute:02d} {ampm}"
+    # Crear la fecha formateada con hora en formato de dos dígitos
+    fecha_formateada = f"{now.day} de {meses[now.month]} de {now.year} a las {hora:02d}:{now.minute:02d} {ampm}"
 
     # Crear una copia de los datos para modificar
     datos_modificados = request.datos.dict()
