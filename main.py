@@ -13,6 +13,12 @@ from fastapi.templating import Jinja2Templates
 import pytz  # Importar pytz para manejar zonas horarias
 import unicodedata  # Para normalizar caracteres
 from collections import defaultdict
+import firebase_admin
+from firebase_admin import auth, credentials
+
+# Inicializar Firebase
+cred = credentials.Certificate("firebase-credentials.json")
+firebase_admin.initialize_app(cred)
 
 # Configurar locale para español
 try:
@@ -68,6 +74,29 @@ def check_rate_limit(ip: str) -> bool:
     
     # Verificar si se excedió el límite (ahora 10 peticiones por minuto)
     return request_counts[ip]["count"] <= 10
+
+# Función para verificar el token de Firebase
+async def verify_firebase_token(request: Request) -> str:
+    # Obtener el token del header Authorization
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(
+            status_code=401,
+            detail="TE PAGO UN CURSO DE DE SEGURIDAD XD"
+        )
+    
+    # Extraer el token
+    token = auth_header.split("Bearer ")[1]
+    
+    try:
+        # Verificar el token con Firebase
+        decoded_token = auth.verify_id_token(token)
+        return decoded_token['uid']  # Retornar el ID del usuario
+    except Exception as e:
+        raise HTTPException(
+            status_code=401,
+            detail="Token inválido o expirado"
+        )
 
 class Data(BaseModel):
     recipient: str
@@ -168,6 +197,9 @@ async def read_root_head():
 
 @app.post("/generate_image/")
 async def generate_image(request: ImageRequest, request_obj: Request):
+    # Verificar autenticación
+    user_id = await verify_firebase_token(request_obj)
+    
     # Obtener la IP del cliente
     client_ip = request_obj.client.host if request_obj.client else "unknown"
     
