@@ -260,10 +260,11 @@ async def generate_image(request: ImageRequest, request_obj: Request):
         # Determinar qué fuente usar según el tipo
         if request.tipo in ["qr_vouch", "qr_detail"]:
             font_path = os.path.join(ASSETS_DIR, "font", "manrope_regular.ttf")
+            font_size = 42  # Tamaño más grande para QR
         else:
             font_path = os.path.join(ASSETS_DIR, "font", "manrope_medium.ttf")
+            font_size = 40  # Tamaño normal para otros tipos
             
-        font_size = 40
         font = ImageFont.truetype(font_path, font_size)
     except IOError:
         raise HTTPException(status_code=500, detail="Error loading font file.")
