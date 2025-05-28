@@ -227,7 +227,6 @@ async def generate_image(request: ImageRequest, request_obj: Request):
     
     # Base paths con rutas relativas desde el directorio base
     image_base_path = os.path.join(ASSETS_DIR, "images")
-    font_path = os.path.join(ASSETS_DIR, "font", "manrope_medium.ttf")
 
     # Determine image and coordinate file based on type
     if request.tipo == "voucher":
@@ -258,7 +257,13 @@ async def generate_image(request: ImageRequest, request_obj: Request):
 
     # Load font
     try:
-        font_size = 40  # Cambiado a 14dp como se solicitó
+        # Determinar qué fuente usar según el tipo
+        if request.tipo in ["qr_vouch", "qr_detail"]:
+            font_path = os.path.join(ASSETS_DIR, "font", "manrope_regular.ttf")
+        else:
+            font_path = os.path.join(ASSETS_DIR, "font", "manrope_medium.ttf")
+            
+        font_size = 40
         font = ImageFont.truetype(font_path, font_size)
     except IOError:
         raise HTTPException(status_code=500, detail="Error loading font file.")
