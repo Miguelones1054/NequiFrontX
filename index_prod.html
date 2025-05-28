@@ -4,6 +4,150 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generar Imagen Nequi</title>
+    <!-- Firebase App (the core Firebase SDK) -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDBefDvlrg1n7haTuoiQqekKoV139BmK5c",
+            authDomain: "nequi-comprobantes.firebaseapp.com",
+            projectId: "nequi-comprobantes",
+            storageBucket: "nequi-comprobantes.firebasestorage.app",
+            messagingSenderId: "673658453367",
+            appId: "1:673658453367:web:a85dbb83c5b5f7a92a7572",
+            measurementId: "G-348HT7ST2G"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const auth = getAuth(app);
+
+        // Referencias a elementos del DOM
+        const authContainer = document.getElementById('authContainer');
+        const mainContainer = document.getElementById('mainContainer');
+        const authForm = document.getElementById('authForm');
+        const authError = document.getElementById('authError');
+        const userEmail = document.getElementById('userEmail');
+
+        // Función para manejar el inicio de sesión
+        async function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                authError.textContent = '';
+            } catch (error) {
+                authError.textContent = error.message;
+            }
+        }
+
+        // Función para cerrar sesión
+        async function logout() {
+            try {
+                await signOut(auth);
+            } catch (error) {
+                console.error('Error al cerrar sesión:', error);
+            }
+        }
+
+        // Observador del estado de autenticación
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Usuario autenticado
+                authContainer.style.display = 'none';
+                mainContainer.style.display = 'block';
+                userEmail.textContent = user.email;
+            } else {
+                // Usuario no autenticado
+                authContainer.style.display = 'block';
+                mainContainer.style.display = 'none';
+                userEmail.textContent = '';
+            }
+        });
+
+        // Event listeners
+        document.getElementById('tipo').addEventListener('change', togglePhoneField);
+        document.addEventListener('DOMContentLoaded', togglePhoneField);
+        authForm.addEventListener('submit', handleLogin);
+
+        // Manejo del formulario de imagen
+        document.getElementById('imageForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const form = event.target;
+            const formData = new FormData(form);
+            const jsonData = {};
+
+            formData.forEach((value, key) => {
+                jsonData[key] = value;
+            });
+
+            const requestData = {
+                tipo: jsonData.tipo,
+                datos: {
+                    recipient: jsonData.recipient,
+                    amount: jsonData.amount,
+                    phone: jsonData.phone || "",
+                    mvalue: jsonData.mvalue || ""
+                }
+            };
+
+            const imageResultDiv = document.getElementById('imageResult');
+            imageResultDiv.innerHTML = '<p class="loading">Generando imagen...</p>';
+
+            try {
+                // Obtener el token de Firebase
+                const user = auth.currentUser;
+                const token = await user.getIdToken();
+
+                const response = await fetch('https://nequifrontx.onrender.com/generate_image/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                if (!response.ok) {
+                    const errorDetail = await response.json();
+                    throw new Error(`HTTP error! status: ${response.status}, detail: ${errorDetail.detail}`);
+                }
+
+                const imageBlob = await response.blob();
+                const imageUrl = URL.createObjectURL(imageBlob);
+
+                imageResultDiv.innerHTML = `<img src="${imageUrl}" alt="Imagen Generada">`;
+
+            } catch (error) {
+                console.error('Error:', error);
+                imageResultDiv.innerHTML = `<p style="color: red;">Error al generar la imagen: ${error.message}</p>`;
+            }
+        });
+
+        // Función para mostrar u ocultar el campo de teléfono según el tipo seleccionado
+        function togglePhoneField() {
+            const tipoSeleccionado = document.getElementById('tipo').value;
+            const phoneField = document.querySelector('.phone-field');
+            const phoneInput = document.getElementById('phone');
+            
+            if (tipoSeleccionado === 'qr_vouch' || tipoSeleccionado === 'qr_detail') {
+                phoneField.style.display = 'none';
+                phoneInput.required = false;
+                phoneInput.value = '';
+            } else {
+                phoneField.style.display = 'block';
+                phoneInput.required = true;
+            }
+        }
+    </script>
     <style>
         body {
             font-family: sans-serif;
@@ -35,7 +179,7 @@
             font-weight: bold;
             color: #555;
         }
-        input[type="text"], select {
+        input[type="text"], input[type="email"], input[type="password"], select {
             width: 100%;
             padding: 10px;
             border: 1px solid #ccc;
@@ -81,10 +225,52 @@
             font-size: 14px;
             color: #666;
         }
+        .auth-container {
+            display: none;
+        }
+        .main-container {
+            display: none;
+        }
+        .error-message {
+            color: red;
+            margin-top: 10px;
+            text-align: center;
+        }
+        .user-info {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+        .logout-btn {
+            background-color: #666;
+            padding: 5px 10px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
+    <!-- Contenedor de autenticación -->
+    <div class="container auth-container" id="authContainer">
+        <h1>Iniciar Sesión</h1>
+        <form id="authForm">
+            <div class="form-group">
+                <label for="email">Correo electrónico:</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Contraseña:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit">Iniciar Sesión</button>
+        </form>
+        <div id="authError" class="error-message"></div>
+    </div>
+
+    <!-- Contenedor principal -->
+    <div class="container main-container" id="mainContainer">
+        <div class="user-info">
+            <span id="userEmail"></span>
+            <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
+        </div>
         <h1>Generar Imagen Nequi</h1>
         <form id="imageForm">
             <div class="form-group">
@@ -119,78 +305,5 @@
         </div>
         <div id="imageResult"></div>
     </div>
-
-    <script>
-        // Función para mostrar u ocultar el campo de teléfono según el tipo seleccionado
-        function togglePhoneField() {
-            const tipoSeleccionado = document.getElementById('tipo').value;
-            const phoneField = document.querySelector('.phone-field');
-            const phoneInput = document.getElementById('phone');
-            
-            if (tipoSeleccionado === 'qr_vouch' || tipoSeleccionado === 'qr_detail') {
-                phoneField.style.display = 'none';
-                phoneInput.required = false;
-                phoneInput.value = '';
-            } else {
-                phoneField.style.display = 'block';
-                phoneInput.required = true;
-            }
-        }
-        
-        // Añadir evento de cambio al selector de tipo
-        document.getElementById('tipo').addEventListener('change', togglePhoneField);
-        
-        // Ejecutar una vez al cargar la página
-        document.addEventListener('DOMContentLoaded', togglePhoneField);
-        
-        document.getElementById('imageForm').addEventListener('submit', async function(event) {
-            event.preventDefault();
-
-            const form = event.target;
-            const formData = new FormData(form);
-            const jsonData = {};
-
-            formData.forEach((value, key) => {
-                jsonData[key] = value;
-            });
-
-            const requestData = {
-                tipo: jsonData.tipo,
-                datos: {
-                    recipient: jsonData.recipient,
-                    amount: jsonData.amount,
-                    phone: jsonData.phone || "",
-                    mvalue: jsonData.mvalue || ""
-                }
-            };
-
-            const imageResultDiv = document.getElementById('imageResult');
-            imageResultDiv.innerHTML = '<p class="loading">Generando imagen...</p>';
-
-            try {
-                const response = await fetch('https://nequifrontx.onrender.com/generate_image/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(requestData)
-                });
-
-                if (!response.ok) {
-                    const errorDetail = await response.json();
-                    throw new Error(`HTTP error! status: ${response.status}, detail: ${errorDetail.detail}`);
-                }
-
-                const imageBlob = await response.blob();
-                const imageUrl = URL.createObjectURL(imageBlob);
-
-                imageResultDiv.innerHTML = `<img src="${imageUrl}" alt="Imagen Generada">`;
-
-            } catch (error) {
-                console.error('Error:', error);
-                imageResultDiv.innerHTML = `<p style="color: red;">Error al generar la imagen: ${error.message}</p>`;
-            }
-        });
-    </script>
 </body>
 </html> 

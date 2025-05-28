@@ -100,7 +100,7 @@ async def verify_firebase_token(request: Request) -> str:
     if not auth_header or not auth_header.startswith("Bearer "):
         raise HTTPException(
             status_code=401,
-            detail="TE PAGO UN CURSO DE DE SEGURIDAD XD"
+            detail="NULL"
         )
     
     # Extraer el token
