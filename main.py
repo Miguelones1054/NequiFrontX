@@ -261,12 +261,9 @@ async def generate_image(request: ImageRequest, request_obj: Request):
     # Load font
     try:
         # Determinar qué fuente usar según el tipo
-        if request.tipo in ["qr_vouch", "qr_detail"]:
+        if request.tipo in ["qr_vouch", "qr_detail", "transfiya"]:
             font_path = os.path.join(ASSETS_DIR, "font", "manrope_regular.ttf")
-            font_size = 42  # Tamaño más grande para QR
-        elif request.tipo == "transfiya":
-            font_path = os.path.join(ASSETS_DIR, "font", "manrope_medium.ttf")
-            font_size = 40  # Mismo tamaño que para voucher y detail
+            font_size = 42  # Tamaño más grande para QR y transfiya
         else:
             font_path = os.path.join(ASSETS_DIR, "font", "manrope_medium.ttf")
             font_size = 40  # Tamaño normal para otros tipos
@@ -312,24 +309,29 @@ async def generate_image(request: ImageRequest, request_obj: Request):
             
         datos_modificados["mvalue"] = mvalue
     else:
-        # Si no se proporcionó un valor, generar uno aleatorio (comportamiento anterior)
-        datos_modificados["mvalue"] = "M" + ''.join([str(random.randint(0, 9)) for _ in range(7)])
+        # Si no se proporcionó un valor, generar uno aleatorio con 8 dígitos (entre 10000000 y 99999999)
+        random_number = random.randint(10000000, 99999999)
+        datos_modificados["mvalue"] = "M" + str(random_number)
     
     # Formatear el número de teléfono con el formato específico: 000 000 0000
     if "phone" in datos_modificados and datos_modificados["phone"]:
         # Eliminar espacios y caracteres no numéricos
         phone = ''.join(filter(str.isdigit, datos_modificados["phone"]))
         
-        # Asegurar que tenemos suficientes dígitos (al menos 10)
-        if len(phone) >= 10:
-            # Formatear como 000 000 0000
-            formatted_phone = f"{phone[:3]} {phone[3:6]} {phone[6:10]}"
-            
-            # Si hay más dígitos, agregar al final
-            if len(phone) > 10:
-                formatted_phone += " " + phone[10:]
+        # Para tipo transfiya, dejar el número sin espacios
+        if request.tipo == "transfiya":
+            datos_modificados["phone"] = phone
+        else:
+            # Asegurar que tenemos suficientes dígitos (al menos 10)
+            if len(phone) >= 10:
+                # Formatear como 000 000 0000
+                formatted_phone = f"{phone[:3]} {phone[3:6]} {phone[6:10]}"
                 
-            datos_modificados["phone"] = formatted_phone
+                # Si hay más dígitos, agregar al final
+                if len(phone) > 10:
+                    formatted_phone += " " + phone[10:]
+                    
+                datos_modificados["phone"] = formatted_phone
     
     # Formatear el valor monetario (amount) en formato colombiano: $0.000,00
     if "amount" in datos_modificados and datos_modificados["amount"]:
