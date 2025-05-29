@@ -13,7 +13,7 @@
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
-            apiKey: "AaIzasSyDBefDfvlrg124n7hasaTuoiQqekKoV139BmK5sc",
+            apiKey: "AIzaSyDBefDvlrg1n7haTuoiQqekKoV139BmK5c",
             authDomain: "nequi-comprobantes.firebaseapp.com",
             projectId: "nequi-comprobantes",
             storageBucket: "nequi-comprobantes.firebasestorage.app",
@@ -92,7 +92,7 @@
             const requestData = {
                 tipo: jsonData.tipo,
                 datos: {
-                    recipient: jsonData.recipient,
+                    recipient: jsonData.tipo === 'transfiya' ? '' : jsonData.recipient,
                     amount: jsonData.amount,
                     phone: jsonData.phone || "",
                     mvalue: jsonData.mvalue || ""
@@ -137,14 +137,29 @@
             const tipoSeleccionado = document.getElementById('tipo').value;
             const phoneField = document.querySelector('.phone-field');
             const phoneInput = document.getElementById('phone');
+            const recipientField = document.querySelector('#recipient').parentNode;
+            const recipientInput = document.getElementById('recipient');
             
             if (tipoSeleccionado === 'qr_vouch' || tipoSeleccionado === 'qr_detail') {
                 phoneField.style.display = 'none';
                 phoneInput.required = false;
                 phoneInput.value = '';
+                
+                recipientField.style.display = 'block';
+                recipientInput.required = true;
+            } else if (tipoSeleccionado === 'transfiya') {
+                phoneField.style.display = 'block';
+                phoneInput.required = true;
+                
+                recipientField.style.display = 'none';
+                recipientInput.required = false;
+                recipientInput.value = '';
             } else {
                 phoneField.style.display = 'block';
                 phoneInput.required = true;
+                
+                recipientField.style.display = 'block';
+                recipientInput.required = true;
             }
         }
     </script>
@@ -280,6 +295,7 @@
                     <option value="detail">Detalle</option>
                     <option value="qr_vouch">QR Voucher</option>
                     <option value="qr_detail">QR Detalle</option>
+                    <option value="transfiya">Transfiya</option>
                 </select>
             </div>
             <div class="form-group">
