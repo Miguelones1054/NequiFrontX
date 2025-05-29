@@ -241,8 +241,11 @@ async def generate_image(request: ImageRequest, request_obj: Request):
     elif request.tipo == "qr_detail":
         image_path = os.path.join(image_base_path, "qr", "qr_detail.jpg")
         coords_path = os.path.join(COORDS_DIR, "pociciones_textos_qr_detail.json")
+    elif request.tipo == "transfiya":
+        image_path = os.path.join(image_base_path, "transfiya.jpg")
+        coords_path = os.path.join(COORDS_DIR, "pociciones_textos_transfiya.json")
     else:
-        raise HTTPException(status_code=400, detail="Invalid 'tipo' specified. Use 'voucher', 'detail', 'qr_vouch', or 'qr_detail'.")
+        raise HTTPException(status_code=400, detail="Invalid 'tipo' specified. Use 'voucher', 'detail', 'qr_vouch', 'qr_detail', or 'transfiya'.")
 
     # Load image and coordinates
     try:
@@ -261,6 +264,9 @@ async def generate_image(request: ImageRequest, request_obj: Request):
         if request.tipo in ["qr_vouch", "qr_detail"]:
             font_path = os.path.join(ASSETS_DIR, "font", "manrope_regular.ttf")
             font_size = 42  # Tamaño más grande para QR
+        elif request.tipo == "transfiya":
+            font_path = os.path.join(ASSETS_DIR, "font", "manrope_medium.ttf")
+            font_size = 40  # Mismo tamaño que para voucher y detail
         else:
             font_path = os.path.join(ASSETS_DIR, "font", "manrope_medium.ttf")
             font_size = 40  # Tamaño normal para otros tipos
