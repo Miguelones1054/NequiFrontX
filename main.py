@@ -412,8 +412,11 @@ async def generate_image(request: ImageRequest, request_obj: Request):
         hora = 12
     ampm = "a. m." if now.hour < 12 else "p. m."
     
-    # Crear la fecha formateada con hora en formato de dos dígitos
-    fecha_formateada = f"{now.day} de {meses[now.month]} de {now.year} a las {hora:02d}:{now.minute:02d} {ampm}"
+    # Formatear el día con cero a la izquierda si es menor que 10
+    dia_formateado = f"{now.day:02d}"  # Esto asegura que siempre tenga 2 dígitos
+    
+    # Crear la fecha formateada con el día con cero a la izquierda
+    fecha_formateada = f"{dia_formateado} de {meses[now.month]} de {now.year} a las {hora:02d}:{now.minute:02d} {ampm}"
     fecha_formateada = normalizar_texto(fecha_formateada)
 
     # Crear una copia de los datos para modificar
