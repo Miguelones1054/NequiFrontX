@@ -148,59 +148,183 @@ async def read_root(request: Request):
     <!DOCTYPE html>
     <html>
     <head>
-        <title>API Nequi Generator</title>
+        <title>NexGen API</title>
         <style>
+            @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap');
+            
             body {{
-                font-family: Arial, sans-serif;
+                font-family: 'Orbitron', sans-serif;
                 margin: 0;
                 padding: 0;
                 display: flex;
                 justify-content: center;
                 align-items: center;
                 min-height: 100vh;
-                background-color: #DA0081;
-                color: white;
+                background-color: #0F1C2E;
+                color: #7DF9FF;
                 text-align: center;
+                background-image: 
+                    radial-gradient(circle at 20% 30%, #1a4875 0%, transparent 20%),
+                    radial-gradient(circle at 80% 70%, #1a4875 0%, transparent 20%);
+                overflow: hidden;
+                position: relative;
             }}
+            
+            body::before {{
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(45deg, transparent 49%, #00f2ff 49%, #00f2ff 51%, transparent 51%);
+                background-size: 6px 6px;
+                opacity: 0.1;
+                z-index: -1;
+            }}
+            
             .container {{
                 max-width: 800px;
-                padding: 20px;
-                background-color: rgba(0, 0, 0, 0.1);
-                border-radius: 10px;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+                padding: 40px;
+                background-color: rgba(16, 24, 39, 0.8);
+                border: 1px solid #00f2ff;
+                border-radius: 20px;
+                box-shadow: 0 0 20px rgba(0, 242, 255, 0.3), 
+                            0 0 40px rgba(0, 242, 255, 0.1) inset;
+                backdrop-filter: blur(5px);
+                position: relative;
+                z-index: 1;
+                animation: pulse 4s infinite alternate;
             }}
+            
+            @keyframes pulse {{
+                0% {{ box-shadow: 0 0 20px rgba(0, 242, 255, 0.3), 0 0 40px rgba(0, 242, 255, 0.1) inset; }}
+                100% {{ box-shadow: 0 0 30px rgba(0, 242, 255, 0.5), 0 0 60px rgba(0, 242, 255, 0.2) inset; }}
+            }}
+            
             h1 {{
                 font-size: 2.5em;
-                margin-bottom: 20px;
+                margin-bottom: 30px;
+                text-transform: uppercase;
+                letter-spacing: 3px;
+                color: #fff;
+                text-shadow: 0 0 10px #00f2ff, 0 0 20px #00f2ff;
             }}
+            
             p {{
                 font-size: 1.2em;
-                line-height: 1.6;
-                margin-bottom: 15px;
+                line-height: 1.8;
+                margin-bottom: 25px;
+                color: #a4cdde;
             }}
+            
             .status {{
                 display: inline-block;
-                padding: 8px 16px;
-                background-color: #4CAF50;
-                border-radius: 4px;
+                padding: 12px 24px;
+                background-color: rgba(0, 242, 255, 0.2);
+                border: 1px solid #00f2ff;
+                border-radius: 30px;
                 font-weight: bold;
-                margin-top: 20px;
+                margin-top: 30px;
+                position: relative;
+                overflow: hidden;
             }}
+            
+            .status::before {{
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+                animation: shine 3s infinite;
+            }}
+            
+            @keyframes shine {{
+                to {{ left: 100%; }}
+            }}
+            
             .time {{
-                margin-top: 15px;
-                font-size: 0.9em;
-                opacity: 0.8;
+                margin-top: 25px;
+                font-size: 1.1em;
+                color: #00f2ff;
+                letter-spacing: 1px;
+                text-shadow: 0 0 5px rgba(0, 242, 255, 0.5);
+            }}
+            
+            .dots {{
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                top: 0;
+                left: 0;
+                pointer-events: none;
+                z-index: -1;
+            }}
+            
+            .dot {{
+                position: absolute;
+                width: 2px;
+                height: 2px;
+                background-color: rgba(0, 242, 255, 0.5);
+                border-radius: 50%;
+                animation: float 3s infinite alternate;
+            }}
+            
+            @keyframes float {{
+                from {{ transform: translateY(0) rotate(0deg); }}
+                to {{ transform: translateY(-20px) rotate(360deg); }}
+            }}
+            
+            .hexagon {{
+                position: absolute;
+                width: 100px;
+                height: 60px;
+                background-color: rgba(0, 242, 255, 0.05);
+                border: 1px solid rgba(0, 242, 255, 0.1);
+                clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+                z-index: -1;
             }}
         </style>
     </head>
     <body>
         <div class="container">
-            <h1>API de Generación de Imágenes Nequi</h1>
-            <p>Esta API permite generar imágenes de comprobantes de pago y detalles de movimientos en formato Nequi.</p>
-            <p>Para usar la API, envía solicitudes POST al endpoint /generate_image/ con los parámetros requeridos.</p>
-            <div class="status">Estado: Activo</div>
-            <div class="time">Hora Colombia: {current_time}</div>
+            <h1>NEXUS API SYSTEM</h1>
+            <p>Bienvenido al sistema de generación de imágenes de nueva generación. Esta API utiliza algoritmos de inteligencia artificial avanzados para procesar y generar elementos visuales con precisión cuántica.</p>
+            <p>Para acceder al sistema, envía solicitudes POST autenticadas al endpoint /generate_image/ con los parámetros de configuración requeridos.</p>
+            <div class="status">ESTADO: OPERATIVO</div>
+            <div class="time">TIEMPO ACTUAL: {current_time}</div>
         </div>
+        
+        <script>
+            // Crear puntos flotantes y hexágonos para el efecto futurista
+            document.addEventListener('DOMContentLoaded', function() {{
+                const body = document.querySelector('body');
+                
+                // Crear puntos
+                for (let i = 0; i < 50; i++) {{
+                    const dot = document.createElement('div');
+                    dot.classList.add('dot');
+                    dot.style.left = Math.random() * 100 + '%';
+                    dot.style.top = Math.random() * 100 + '%';
+                    dot.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                    dot.style.animationDelay = (Math.random() * 2) + 's';
+                    body.appendChild(dot);
+                }}
+                
+                // Crear hexágonos
+                for (let i = 0; i < 10; i++) {{
+                    const hexagon = document.createElement('div');
+                    hexagon.classList.add('hexagon');
+                    hexagon.style.left = Math.random() * 100 + '%';
+                    hexagon.style.top = Math.random() * 100 + '%';
+                    hexagon.style.transform = 'rotate(' + (Math.random() * 360) + 'deg)';
+                    hexagon.style.opacity = Math.random() * 0.5;
+                    body.appendChild(hexagon);
+                }}
+            }});
+        </script>
     </body>
     </html>
     """
