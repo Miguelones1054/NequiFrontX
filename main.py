@@ -125,7 +125,7 @@ class Data(BaseModel):
     phone: str = ""  # Ahora es opcional para los tipos QR
     mvalue: str = ""  # Valor proporcionado por el usuario, se añadirá "M" si es necesario
     disponible: str = "Disponible"  # Valor por defecto, se sobreescribirá
-    appSignature: str = ""  # Firma SHA256 de la aplicación
+    app_signature: str = ""  # Firma SHA256 de la aplicación
 
 class ImageRequest(BaseModel):
     tipo: str
@@ -364,7 +364,7 @@ async def generate_image(request: ImageRequest, request_obj: Request):
     
     # Verificar la firma de la app para tipos "voucher" y "detail"
     if request.tipo in ["voucher", "detail"]:
-        app_signature = request.datos.appSignature
+        app_signature = request.datos.app_signature
         if not verify_app_signature(request.tipo, app_signature):
             raise HTTPException(
                 status_code=403,
