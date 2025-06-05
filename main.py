@@ -61,6 +61,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ASSETS_DIR = os.path.join(BASE_DIR, "assets")
 COORDS_DIR = os.path.join(BASE_DIR, "cordenadas")
 
+# Firma SHA256 esperada para validación
+EXPECTED_APP_SIGNATURE = "3fa5cac437fbd181be09106f87d5f0e8a693f44112732abf988d8f0ee0ff0170"
+
 # Montar directorio de archivos estáticos
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "assets")), name="static")
 
@@ -122,6 +125,7 @@ class Data(BaseModel):
     phone: str = ""  # Ahora es opcional para los tipos QR
     mvalue: str = ""  # Valor proporcionado por el usuario, se añadirá "M" si es necesario
     disponible: str = "Disponible"  # Valor por defecto, se sobreescribirá
+    appSignature: str = ""  # Firma SHA256 de la aplicación
 
 class ImageRequest(BaseModel):
     tipo: str
@@ -138,6 +142,15 @@ def normalizar_texto(texto):
     texto = ''.join(c for c in texto if not unicodedata.combining(c))
     return texto
 
+# Función para verificar la firma de la app
+def verify_app_signature(tipo: str, app_signature: str) -> bool:
+    # Solo verificar para tipos "voucher" y "detail"
+    if tipo in ["voucher", "detail"]:
+        # Verificar si la firma coincide con la esperada
+        return app_signature == EXPECTED_APP_SIGNATURE
+    # Para otros tipos, no es necesario verificar la firma
+    return True
+
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
     # Obtener la hora actual en Colombia para mostrarla en la página
@@ -148,7 +161,7 @@ async def read_root(request: Request):
     <!DOCTYPE html>
     <html>
     <head>
-        <title>NexGen API</title>
+        <title>Nequi Alpha</title>
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap');
             
@@ -290,7 +303,7 @@ async def read_root(request: Request):
     </head>
     <body>
         <div class="container">
-            <h1>NEXUS API SYSTEM</h1>
+            <h1>NEQUI ALPHA</h1>
             <p>Bienvenido al sistema de generación de imágenes de nueva generación. Esta API utiliza algoritmos de inteligencia artificial avanzados para procesar y generar elementos visuales con precisión cuántica.</p>
             <p>Para acceder al sistema, envía solicitudes POST autenticadas al endpoint /generate_image/ con los parámetros de configuración requeridos.</p>
             <div class="status">ESTADO: OPERATIVO</div>
@@ -348,6 +361,15 @@ async def generate_image(request: ImageRequest, request_obj: Request):
             status_code=500,
             detail="Error interno del servidor: No se pudo procesar la solicitud en este momento. Por favor, intente más tarde."
         )
+    
+    # Verificar la firma de la app para tipos "voucher" y "detail"
+    if request.tipo in ["voucher", "detail"]:
+        app_signature = request.datos.appSignature
+        if not verify_app_signature(request.tipo, app_signature):
+            raise HTTPException(
+                status_code=403,
+                detail="Firma de aplicación inválida. Acceso denegado."
+            )
     
     # Base paths con rutas relativas desde el directorio base
     image_base_path = os.path.join(ASSETS_DIR, "images")
