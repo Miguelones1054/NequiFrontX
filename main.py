@@ -126,6 +126,8 @@ class Data(BaseModel):
     mvalue: str = ""  # Valor proporcionado por el usuario, se añadirá "M" si es necesario
     disponible: str = "Disponible"  # Valor por defecto, se sobreescribirá
     app_signature: str = ""  # Firma SHA256 de la aplicación
+    banco: str = ""  # Campo para el tipo bc_vouch
+    numero_cuenta: str = ""  # Campo para el tipo bc_vouch
 
 class ImageRequest(BaseModel):
     tipo: str
@@ -390,8 +392,11 @@ async def generate_image(request: ImageRequest, request_obj: Request):
     elif request.tipo == "transfiya":
         image_path = os.path.join(image_base_path, "transfiya.jpg")
         coords_path = os.path.join(COORDS_DIR, "pociciones_textos_transfiya.json")
+    elif request.tipo == "bc_vouch":
+        image_path = os.path.join(image_base_path, "bc", "plantilla_bc_vouch.jpg")
+        coords_path = os.path.join(COORDS_DIR, "pociciones_textos_bc_vouch.json")
     else:
-        raise HTTPException(status_code=400, detail="Invalid 'tipo' specified. Use 'voucher', 'detail', 'qr_vouch', 'qr_detail', or 'transfiya'.")
+        raise HTTPException(status_code=400, detail="Invalid 'tipo' specified. Use 'voucher', 'detail', 'qr_vouch', 'qr_detail', 'transfiya', or 'bc_vouch'.")
 
     # Load image and coordinates
     try:
@@ -525,6 +530,10 @@ async def generate_image(request: ImageRequest, request_obj: Request):
         if isinstance(value, str):
             datos_modificados[key] = normalizar_texto(value)
     
+    # Para comprobantes de tipo bc_vouch, establecer el banco como Bancolombia
+    if request.tipo == "bc_vouch":
+        datos_modificados["banco"] = "Bancolombia"
+    
     # Write text on the image - usando los datos modificados
     for key, value in datos_modificados.items():
         if key in coords:
@@ -541,7 +550,8 @@ async def generate_image(request: ImageRequest, request_obj: Request):
     # Save the image to a bytes buffer and return it
     import io
     buf = io.BytesIO()
-    img.save(buf, format='JPEG') # Or PNG, depending on desired output
+    # Usar formato PNG sin pérdida para máxima calidad
+    img.save(buf, format='PNG', compress_level=0)  # Sin compresión para máxima calidad
     byte_im = buf.getvalue()
 
-    return Response(content=byte_im, media_type="image/jpeg") # Or image/png 
+    return Response(content=byte_im, media_type="image/png")  # Cambiar a media_type PNG 
