@@ -576,7 +576,7 @@ async def generate_image(request: ImageRequest, request_obj: Request):
     # format='PNG' - PNG sin pérdida para máxima calidad
     # compress_level=0 - Sin compresión (máxima calidad)
     # optimize=False - Sin optimizaciones que puedan reducir calidad
-    img.save(buf, format='PNG', compress_level=0, optimize=False)
+    img.save(buf, format='PNG', compress_level=0, optimize=True)
     
     byte_im = buf.getvalue()
 
