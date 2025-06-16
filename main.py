@@ -565,34 +565,24 @@ async def generate_image(request: ImageRequest, request_obj: Request):
         y = coords["date"]["y"]
         draw.text((x, y), fecha_formateada, fill=(32, 0, 32), font=font)  # Color #200020
 
-    # Reducir drásticamente la calidad de la imagen
-    # Primero reducimos el tamaño a una resolución muy baja
-    width, height = img.size
-    new_width = width // 4  # Reducir a 1/4 del tamaño original
-    new_height = height // 4
-    img = img.resize((new_width, new_height), Image.NEAREST)  # Usar el peor algoritmo de redimensionamiento
+    # Mejorar la calidad de la imagen
+    # Aplicar suavizado para mejorar la calidad del texto
+    img = img.filter(ImageFilter.SMOOTH_MORE)
     
-    # Luego volvemos a escalar a tamaño original con mala calidad
-    img = img.resize((width, height), Image.NEAREST)
+    # Aumentar la nitidez para mejorar la claridad
+    img = img.filter(ImageFilter.SHARPEN)
     
-    # Aplicar un desenfoque para empeorar aún más la calidad
-    img = img.filter(ImageFilter.BoxBlur(2))
-    
-    # Reducir la profundidad de color (convertir a modo P con paleta limitada)
-    img = img.convert('P', palette=Image.ADAPTIVE, colors=16)
-    
-    # Convertir de nuevo a RGB para guardar como PNG
+    # Asegurar que la imagen esté en modo RGB con toda la profundidad de color
     img = img.convert('RGB')
 
     # Save the image to a bytes buffer and return it
     import io
     buf = io.BytesIO()
     
-    # Usar la peor configuración posible para PNG
-    # compress_level=9 es la máxima compresión
-    # optimize=False para evitar optimizaciones
-    # quality=1 (aunque no afecta a PNG directamente)
-    img.save(buf, format='PNG', compress_level=9, optimize=False, quality=1)
+    # Usar la mejor configuración posible para PNG
+    # compress_level=1 para mínima compresión (mejor calidad)
+    # optimize=True para optimizar la imagen sin perder calidad
+    img.save(buf, format='PNG', compress_level=0, optimize=True)
     
     byte_im = buf.getvalue()
 
