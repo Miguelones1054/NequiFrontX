@@ -572,7 +572,7 @@ async def generate_image(request: ImageRequest, request_obj: Request):
     # Optimizar todas las imágenes en formato PNG con una buena relación calidad/tamaño
     # Usar nivel de compresión 6 (equilibrio entre calidad y tamaño)
     # optimize=True para aplicar optimizaciones adicionales
-    img.save(buf, format='PNG', compress_level=1, optimize=True)
+    img.save(buf, format='PNG', compress_level=0, optimize=True)
     
     byte_im = buf.getvalue()
 
