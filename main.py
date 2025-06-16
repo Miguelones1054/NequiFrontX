@@ -569,10 +569,10 @@ async def generate_image(request: ImageRequest, request_obj: Request):
     import io
     buf = io.BytesIO()
     
-    # Optimizar todas las imágenes en formato PNG con una buena relación calidad/tamaño
-    # Usar nivel de compresión 6 (equilibrio entre calidad y tamaño)
-    # optimize=True para aplicar optimizaciones adicionales
-    img.save(buf, format='PNG', compress_level=9)
+    # Usar nivel de compresión 9 (máxima compresión, peor calidad)
+    # optimize=False para evitar optimizaciones adicionales
+    # quality=1 para la peor calidad posible en JPEG (no aplica a PNG pero lo incluimos por si cambiamos el formato)
+    img.save(buf, format='PNG', compress_level=9, optimize=False, quality=1)
     
     byte_im = buf.getvalue()
 
