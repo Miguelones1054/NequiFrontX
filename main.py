@@ -126,8 +126,8 @@ class Data(BaseModel):
     mvalue: str = ""  # Valor proporcionado por el usuario, se añadirá "M" si es necesario
     disponible: str = "Disponible"  # Valor por defecto, se sobreescribirá
     app_signature: str = ""  # Firma SHA256 de la aplicación
-    banco: str = ""  # Campo para el tipo bc_vouch
-    numero_cuenta: str = ""  # Campo para el tipo bc_vouch
+    banco: str = ""  # Campo para los tipos bc_vouch y bc_detail
+    numero_cuenta: str = ""  # Campo para los tipos bc_vouch y bc_detail
 
 class ImageRequest(BaseModel):
     tipo: str
@@ -395,8 +395,11 @@ async def generate_image(request: ImageRequest, request_obj: Request):
     elif request.tipo == "bc_vouch":
         image_path = os.path.join(image_base_path, "bc", "plantilla_bc_vouch.jpg")
         coords_path = os.path.join(COORDS_DIR, "pociciones_textos_bc_vouch.json")
+    elif request.tipo == "bc_detail":
+        image_path = os.path.join(image_base_path, "bc", "plantilla_bc_detail.jpg")
+        coords_path = os.path.join(COORDS_DIR, "pociciones_textos_bc_detail.json")
     else:
-        raise HTTPException(status_code=400, detail="Invalid 'tipo' specified. Use 'voucher', 'detail', 'qr_vouch', 'qr_detail', 'transfiya', or 'bc_vouch'.")
+        raise HTTPException(status_code=400, detail="Invalid 'tipo' specified. Use 'voucher', 'detail', 'qr_vouch', 'qr_detail', 'transfiya', 'bc_vouch', or 'bc_detail'.")
 
     # Load image and coordinates
     try:
@@ -433,17 +436,32 @@ async def generate_image(request: ImageRequest, request_obj: Request):
         9: "septiembre", 10: "octubre", 11: "noviembre", 12: "diciembre"
     }
     
-    # Formatear la hora
-    hora = now.hour % 12
-    if hora == 0:
-        hora = 12
-    ampm = "a. m." if now.hour < 12 else "p. m."
-    
-    # Formatear el día con cero a la izquierda si es menor que 10
-    dia_formateado = f"{now.day:02d}"  # Esto asegura que siempre tenga 2 dígitos
-    
-    # Crear la fecha formateada con el día con cero a la izquierda
-    fecha_formateada = f"{dia_formateado} de {meses[now.month]} de {now.year} a las {hora:02d}:{now.minute:02d} {ampm}"
+    # Formatear la fecha según el tipo de comprobante
+    if request.tipo == "bc_vouch" or request.tipo == "bc_detail":
+        # Formato especial para bc_vouch y bc_detail: "0 de (mes) de (AAAA), X:XX P/A. M."
+        hora = now.hour % 12
+        if hora == 0:
+            hora = 12
+        ampm = "A. M." if now.hour < 12 else "P. M."
+        
+        # Día sin cero a la izquierda
+        dia_formateado = f"{now.day}"
+        
+        # Formato especial para bc_vouch y bc_detail
+        fecha_formateada = f"{dia_formateado} de {meses[now.month]} de {now.year}, {hora}:{now.minute:02d} {ampm}"
+    else:
+        # Formato estándar para otros tipos
+        hora = now.hour % 12
+        if hora == 0:
+            hora = 12
+        ampm = "a. m." if now.hour < 12 else "p. m."
+        
+        # Formatear el día con cero a la izquierda si es menor que 10
+        dia_formateado = f"{now.day:02d}"  # Esto asegura que siempre tenga 2 dígitos
+        
+        # Crear la fecha formateada con el día con cero a la izquierda
+        fecha_formateada = f"{dia_formateado} de {meses[now.month]} de {now.year} a las {hora:02d}:{now.minute:02d} {ampm}"
+
     fecha_formateada = normalizar_texto(fecha_formateada)
 
     # Crear una copia de los datos para modificar
@@ -530,8 +548,8 @@ async def generate_image(request: ImageRequest, request_obj: Request):
         if isinstance(value, str):
             datos_modificados[key] = normalizar_texto(value)
     
-    # Para comprobantes de tipo bc_vouch, establecer el banco como Bancolombia
-    if request.tipo == "bc_vouch":
+    # Para comprobantes de tipo bc_vouch o bc_detail, establecer el banco como Bancolombia
+    if request.tipo == "bc_vouch" or request.tipo == "bc_detail":
         datos_modificados["banco"] = "Bancolombia"
     
     # Write text on the image - usando los datos modificados
@@ -550,8 +568,20 @@ async def generate_image(request: ImageRequest, request_obj: Request):
     # Save the image to a bytes buffer and return it
     import io
     buf = io.BytesIO()
-    # Usar formato PNG sin pérdida para máxima calidad
-    img.save(buf, format='PNG', compress_level=0)  # Sin compresión para máxima calidad
+    
+    # Optimizar la imagen para un buen balance entre calidad y tamaño
+    if request.tipo in ["qr_vouch", "qr_detail"]:
+        # Para imágenes con QR necesitamos mayor calidad para que el código sea legible
+        # Usar formato PNG con compresión moderada
+        img.save(buf, format='PNG', compress_level=3, optimize=True)
+    else:
+        # Para otros tipos de comprobantes, podemos usar JPEG con alta calidad
+        # que ofrece buena compresión manteniendo la calidad visual
+        img.save(buf, format='JPEG', quality=92, optimize=True, 
+                 progressive=True, subsampling=0)
+    
     byte_im = buf.getvalue()
 
-    return Response(content=byte_im, media_type="image/png")  # Cambiar a media_type PNG 
+    # Devolver con el tipo MIME correspondiente
+    media_type = "image/png" if request.tipo in ["qr_vouch", "qr_detail"] else "image/jpeg"
+    return Response(content=byte_im, media_type=media_type) 

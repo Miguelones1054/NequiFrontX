@@ -1,0 +1,140 @@
+DOCUMENTACIÓN DE PARÁMETROS PARA LA API NEQUI FRONTX
+=====================================================
+
+Este documento detalla los parámetros que espera la API para generar los diferentes tipos de comprobantes.
+
+ESTRUCTURA GENERAL DE LA SOLICITUD
+---------------------------------
+Todas las solicitudes deben enviarse como POST a la ruta /generate_image/ con un cuerpo JSON que sigue esta estructura:
+
+```json
+{
+  "tipo": "TIPO_DE_COMPROBANTE",
+  "datos": {
+    // Campos específicos según el tipo de comprobante
+  }
+}
+```
+
+AUTENTICACIÓN
+-----------
+Todas las solicitudes deben incluir un encabezado de autorización con un token JWT válido:
+
+```
+Authorization: Bearer <token_firebase>
+```
+
+TIPOS DE COMPROBANTES Y SUS PARÁMETROS
+------------------------------------
+
+1. VOUCHER ESTÁNDAR
+------------------
+Tipo: "voucher"
+
+```json
+{
+  "tipo": "voucher",
+  "datos": {
+    "recipient": "Nombre del destinatario",
+    "amount": "50000",
+    "phone": "3001234567",
+    "mvalue": "M12345678",  // Opcional, se genera automáticamente si no se proporciona
+    "app_signature": "3fa5cac437fbd181be09106f87d5f0e8a693f44112732abf988d8f0ee0ff0170"  // Requerido para este tipo
+  }
+}
+```
+
+2. DETALLE DE MOVIMIENTO
+----------------------
+Tipo: "detail"
+
+```json
+{
+  "tipo": "detail",
+  "datos": {
+    "recipient": "Nombre del destinatario",
+    "amount": "50000",
+    "phone": "3001234567",
+    "mvalue": "M12345678",  // Opcional, se genera automáticamente si no se proporciona
+    "app_signature": "3fa5cac437fbd181be09106f87d5f0e8a693f44112732abf988d8f0ee0ff0170"  // Requerido para este tipo
+  }
+}
+```
+
+3. QR VOUCHER
+-----------
+Tipo: "qr_vouch"
+
+```json
+{
+  "tipo": "qr_vouch",
+  "datos": {
+    "recipient": "Nombre del destinatario",
+    "amount": "50000",
+    "mvalue": "M12345678"  // Opcional, se genera automáticamente si no se proporciona
+  }
+}
+```
+
+4. QR DETALLE
+-----------
+Tipo: "qr_detail"
+
+```json
+{
+  "tipo": "qr_detail",
+  "datos": {
+    "recipient": "Nombre del destinatario",
+    "amount": "50000",
+    "mvalue": "M12345678"  // Opcional, se genera automáticamente si no se proporciona
+  }
+}
+```
+
+5. TRANSFIYA
+----------
+Tipo: "transfiya"
+
+```json
+{
+  "tipo": "transfiya",
+  "datos": {
+    "amount": "50000",
+    "phone": "3001234567",
+    "mvalue": "M12345678"  // Opcional, se genera automáticamente si no se proporciona
+  }
+}
+```
+
+6. BANCOLOMBIA VOUCHER
+-------------------
+Tipo: "bc_vouch"
+
+```json
+{
+  "tipo": "bc_vouch",
+  "datos": {
+    "recipient": "Nombre del destinatario",
+    "amount": "50000",
+    "numero_cuenta": "1234567890",
+    "mvalue": "M12345678"  // Opcional, se genera automáticamente si no se proporciona
+    // El campo "banco" se establece automáticamente como "Bancolombia"
+  }
+}
+```
+
+NOTAS ADICIONALES
+---------------
+
+1. Todos los comprobantes incluirán automáticamente:
+   - La fecha y hora actual en formato colombiano
+   - El estado "Disponible"
+
+2. Formato de los valores:
+   - amount: Se formateará automáticamente con separador de miles (punto) y decimales (coma)
+   - phone: Para tipos distintos a "transfiya", se formateará como "000 000 0000"
+   - mvalue: Si se proporciona, se asegurará que comience con "M". Si no, se generará automáticamente
+
+3. Limitaciones:
+   - Máximo 5 solicitudes por minuto por token de autenticación
+   - Los tipos "voucher" y "detail" requieren una firma de aplicación válida 

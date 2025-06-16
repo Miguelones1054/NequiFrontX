@@ -99,8 +99,8 @@
                 }
             };
             
-            // Agregar campos específicos para bc_vouch
-            if (jsonData.tipo === 'bc_vouch') {
+            // Agregar campos específicos para bc_vouch y bc_detail
+            if (jsonData.tipo === 'bc_vouch' || jsonData.tipo === 'bc_detail') {
                 requestData.datos.banco = "Bancolombia";  // Valor fijo
                 requestData.datos.numero_cuenta = jsonData.numero_cuenta || "";
             }
@@ -170,8 +170,8 @@
                 recipientField.style.display = 'none';
                 recipientInput.required = false;
                 recipientInput.value = '';
-            } else if (tipoSeleccionado === 'bc_vouch') {
-                // Para bc_vouch, ocultar el campo de teléfono
+            } else if (tipoSeleccionado === 'bc_vouch' || tipoSeleccionado === 'bc_detail') {
+                // Para bc_vouch y bc_detail, ocultar el campo de teléfono
                 phoneField.style.display = 'none';
                 phoneInput.required = false;
                 phoneInput.value = '';
@@ -362,7 +362,8 @@
                     <option value="qr_vouch">QR Voucher</option>
                     <option value="qr_detail">QR Detalle</option>
                     <option value="transfiya">Transfiya</option>
-                    <option value="bc_vouch">Bancolombia</option>
+                    <option value="bc_vouch">Bancolombia Voucher</option>
+                    <option value="bc_detail">Bancolombia Detalle</option>
                 </select>
             </div>
             <div class="form-group">
