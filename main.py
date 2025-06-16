@@ -569,19 +569,13 @@ async def generate_image(request: ImageRequest, request_obj: Request):
     import io
     buf = io.BytesIO()
     
-    # Optimizar la imagen para un buen balance entre calidad y tamaño
-    if request.tipo in ["qr_vouch", "qr_detail"]:
-        # Para imágenes con QR necesitamos mayor calidad para que el código sea legible
-        # Usar formato PNG con compresión moderada
-        img.save(buf, format='PNG', compress_level=3, optimize=True)
-    else:
-        # Para otros tipos de comprobantes, podemos usar JPEG con alta calidad
-        # que ofrece buena compresión manteniendo la calidad visual
-        img.save(buf, format='JPEG', quality=92, optimize=True, 
-                 progressive=True, subsampling=0)
+    # Optimizar todas las imágenes en formato PNG con una buena relación calidad/tamaño
+    # Usar nivel de compresión 6 (equilibrio entre calidad y tamaño)
+    # optimize=True para aplicar optimizaciones adicionales
+    img.save(buf, format='PNG', compress_level=1, optimize=True)
     
     byte_im = buf.getvalue()
 
-    # Devolver con el tipo MIME correspondiente
-    media_type = "image/png" if request.tipo in ["qr_vouch", "qr_detail"] else "image/jpeg"
+    # Devolver con el tipo MIME correspondiente para PNG
+    media_type = "image/png"
     return Response(content=byte_im, media_type=media_type) 
