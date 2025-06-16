@@ -565,24 +565,18 @@ async def generate_image(request: ImageRequest, request_obj: Request):
         y = coords["date"]["y"]
         draw.text((x, y), fecha_formateada, fill=(32, 0, 32), font=font)  # Color #200020
 
-    # Mejorar la calidad de la imagen
-    # Aplicar suavizado para mejorar la calidad del texto
-    img = img.filter(ImageFilter.SMOOTH_MORE)
-    
-    # Aumentar la nitidez para mejorar la claridad
-    img = img.filter(ImageFilter.SHARPEN)
-    
     # Asegurar que la imagen esté en modo RGB con toda la profundidad de color
     img = img.convert('RGB')
 
-    # Save the image to a bytes buffer and return it
+    # Save the image to a bytes buffer and return it with máxima calidad posible
     import io
     buf = io.BytesIO()
     
-    # Usar la mejor configuración posible para PNG
-    # compress_level=1 para mínima compresión (mejor calidad)
-    # optimize=True para optimizar la imagen sin perder calidad
-    img.save(buf, format='PNG', compress_level=0, optimize=True)
+    # Guardar la imagen con la máxima calidad posible
+    # format='PNG' - PNG sin pérdida para máxima calidad
+    # compress_level=0 - Sin compresión (máxima calidad)
+    # optimize=False - Sin optimizaciones que puedan reducir calidad
+    img.save(buf, format='PNG', compress_level=0, optimize=False)
     
     byte_im = buf.getvalue()
 
