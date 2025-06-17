@@ -144,15 +144,6 @@ def normalizar_texto(texto):
     texto = ''.join(c for c in texto if not unicodedata.combining(c))
     return texto
 
-# Función para verificar la firma de la app
-def verify_app_signature(tipo: str, app_signature: str) -> bool:
-    # Solo verificar para tipos "voucher" y "detail"
-    if tipo in ["voucher", "detail"]:
-        # Verificar si la firma coincide con la esperada
-        return app_signature == EXPECTED_APP_SIGNATURE
-    # Para otros tipos, no es necesario verificar la firma
-    return True
-
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
     # Obtener la hora actual en Colombia para mostrarla en la página
@@ -364,21 +355,12 @@ async def generate_image(request: ImageRequest, request_obj: Request):
             detail="Error interno del servidor: No se pudo procesar la solicitud en este momento. Por favor, intente más tarde."
         )
     
-    # Verificar la firma de la app para tipos "voucher" y "detail"
-    if request.tipo in ["voucher", "detail"]:
-        app_signature = request.datos.app_signature
-        if not verify_app_signature(request.tipo, app_signature):
-            raise HTTPException(
-                status_code=403,
-                detail="Firma de aplicación inválida. Acceso denegado."
-            )
-    
     # Base paths con rutas relativas desde el directorio base
     image_base_path = os.path.join(ASSETS_DIR, "images")
 
     # Determine image and coordinate file based on type
     if request.tipo == "voucher":
-        image_path = os.path.join(image_base_path, "vouch.jpg")
+        image_path = os.path.join(image_base_path, "vouch.png")
         coords_path = os.path.join(COORDS_DIR, "pociciones_textos_voucher.json")
     elif request.tipo == "detail":
         image_path = os.path.join(image_base_path, "movement_detail.jpg")
