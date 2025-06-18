@@ -363,7 +363,7 @@ async def generate_image(request: ImageRequest, request_obj: Request):
         image_path = os.path.join(image_base_path, "vouch.png")
         coords_path = os.path.join(COORDS_DIR, "pociciones_textos_voucher.json")
     elif request.tipo == "detail":
-        image_path = os.path.join(image_base_path, "movement_detail.jpg")
+        image_path = os.path.join(image_base_path, "movement_detail.png")
         coords_path = os.path.join(COORDS_DIR, "posiciones_textos_detalles.json")
     elif request.tipo == "qr_vouch":
         image_path = os.path.join(image_base_path, "qr", "qr_voucher.jpg")
