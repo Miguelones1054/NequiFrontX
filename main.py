@@ -378,7 +378,7 @@ async def generate_image(request: ImageRequest, request_obj: Request):
         image_path = os.path.join(image_base_path, "bc", "plantilla_bc_vouch.jpg")
         coords_path = os.path.join(COORDS_DIR, "pociciones_textos_bc_vouch.json")
     elif request.tipo == "bc_detail":
-        image_path = os.path.join(image_base_path, "bc", "plantilla_bc_detail.jpg")
+        image_path = os.path.join(image_base_path, "bc", "plantilla_bc_detail.png")
         coords_path = os.path.join(COORDS_DIR, "pociciones_textos_bc_detail.json")
     else:
         raise HTTPException(status_code=400, detail="Invalid 'tipo' specified. Use 'voucher', 'detail', 'qr_vouch', 'qr_detail', 'transfiya', 'bc_vouch', or 'bc_detail'.")
